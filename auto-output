@@ -1,11 +1,16 @@
-moodle.performance <- function(datafile.name){
+moodle.performance <- function(data.name){
     library(readxl)
     library(XLConnect)
     library(data.table)
     library(dplyr)
     library(xlsx)
     
-    datafile.name <- paste("maths-(S1)B,CD1-Chi-1.1-有向數的概念及應用(1B_By Mr. Nip)-grades","xlsx",sep = ".")
+    moodle.im.dir <- "C:/Users/1808/Documents/Moodle/Data/ImportResult"
+    moodle.ex.dir <- "C:/Users/1808/Documents/Moodle/Data/ExportResult"
+    setwd("C:/Users/1808/Downloads")
+    
+    datafile.name <- paste(data.name,"xlsx",sep = ".")
+    datafile.name <- paste("maths(S1)B,CD1-1.1 有向數的概念及應用(1B_By Mr. Nip)-grades","xlsx",sep = ".")
     
     info.temp <- unlist(strsplit(datafile.name,"-"))
     subject <- info.temp[1]
@@ -15,7 +20,6 @@ moodle.performance <- function(datafile.name){
     quiz.name <- info.temp[5]
     
 ## read and clear data from file "Downloads"
-    setwd("C:/Users/1808/Downloads")
     data <- read_excel(datafile.name, range = cell_cols("B:T"))
     data <- select(data,c(1:6,8:19))
     data <- data[1:(nrow(data)-1),]
@@ -26,7 +30,7 @@ moodle.performance <- function(datafile.name){
         
     
 ## move the original import data to /moodle/class
-    moodle.im.dir <- "C:/Users/1808/Documents/Moodle/Data/ImportResult"
+    
     ## create the class file
     ifelse(!dir.exists(file.path(moodle.im.dir, class)),
            dir.create(file.path(moodle.im.dir, class)),
@@ -59,11 +63,12 @@ moodle.performance <- function(datafile.name){
     
     #Error in as.POSIXlt.character(x, tz, ...) : 
     #    character string is not in a standard unambiguous format
-    moodle.ex.dir <- "C:/Users/1808/Documents/Moodle/Data/ExportResult"
+    
     ## create the class file
     ifelse(!dir.exists(file.path(moodle.ex.dir,class)),
            dir.create(file.path(moodle.ex.dir,class)),
            paste0("The file of class 'ExportResult/",class,"' has been created."))
+    
     write.xlsx(Max.export, 
                file = paste0("Max-",datafile.name), 
                sheetName = paste0("Quiz",quiz.num),
