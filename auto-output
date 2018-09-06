@@ -5,22 +5,114 @@ moodle.performance <- function(datafile.name){
     library(dplyr)
     library(xlsx)
     
-    info.temp <- unlist(strsplit(datafile.name,"_"))
+    datafile.name <- paste("maths-(S1)B,CD1-Chi-1.1-有向數的概念及應用(1B_By Mr. Nip)-grades","xlsx",sep = ".")
+    
+    info.temp <- unlist(strsplit(datafile.name,"-"))
     subject <- info.temp[1]
     class <- info.temp[2]
     language <- info.temp[3]
     quiz.num <- info.temp[4]
     quiz.name <- info.temp[5]
     
-    
-    ## locate and read data
-    moddle.im.dir <- "C:/Users/1808/Desktop/Moodle/Data/ImportResult"
-    import.excel.path <- paste(moddle.im.dir,class,datafile.name,sep = "/")
-    data <- read_excel(import.excel.path, range = cell_cols("B:T"))
+## read and clear data from file "Downloads"
+    setwd("C:/Users/1808/Downloads")
+    data <- read_excel(datafile.name, range = cell_cols("B:T"))
+    data <- select(data,c(1:6,8:19))
     data <- data[1:(nrow(data)-1),]
+    ## convert the class of the score cell into numeric or double
+    data.score <- data[8:18] %>%
+        apply(.,2,as.numeric)
+    data <- cbind(data[1:7],data.score)
+        
     
-    names.list <- c("Name", "Class", "Student ID","Email","State","Started on","Completed",
-                    "Time taken","Score",paste0("Q",seq(1:10)))
-    names(data) <- names.list
+## move the original import data to /moodle/class
+    moodle.im.dir <- "C:/Users/1808/Documents/Moodle/Data/ImportResult"
+    ## create the class file
+    ifelse(!dir.exists(file.path(moodle.im.dir, class)),
+           dir.create(file.path(moodle.im.dir, class)),
+           paste0("The file of class 'ImportResult", class, "' has been created."))
+    ## copy the datafile into the class file
+    file.copy(from = datafile.name, to = file.path(moodle.im.dir,class))
     
+#Clearing data
+    ## Delete the data row of state of 'In progress' 
+    comp.data <- data[which(data$State == "Finished"),]
+    comp.name <- unique(comp.data$`First name`)
+    
+    Max.export <- NULL
+    for (i in seq(length(comp.name))){
+        name.temp <- comp.data[which(comp.data$`First name` == comp.name[i]),]
+        max.row <- name.temp$`Grade/10.00` %>%
+            which.max() %>%
+            name.temp[.,]
+        Max.export <- rbind(Max.export, max.row)
     }
+    ## Order row by Department
+    Max.export <- Max.export$Department %>%
+        order() %>%
+        Max.export[.,]
+    
+    ## Calcuate mean of total grade and each question
+    max.mean <- Max.export[8:18] %>%
+        sapply(.,mean) %>%
+        round(.,2)
+    
+    #Error in as.POSIXlt.character(x, tz, ...) : 
+    #    character string is not in a standard unambiguous format
+    moodle.ex.dir <- "C:/Users/1808/Documents/Moodle/Data/ExportResult"
+    ## create the class file
+    ifelse(!dir.exists(file.path(moodle.ex.dir,class)),
+           dir.create(file.path(moodle.ex.dir,class)),
+           paste0("The file of class 'ExportResult/",class,"' has been created."))
+    write.xlsx(Max.export, 
+               file = paste0("Max-",datafile.name), 
+               sheetName = paste0("Quiz",quiz.num),
+               row.names = FALSE)
+    
+    file.rename(file.path(getwd(),paste0(datafile.name,".xlsx")), 
+                file.path(moodle.ex.dir,class,paste0(datafile.name,".xlsx")))
+
+    ## To distinguish the students who completed the quiz after deadline
+    anti_join()
+    
+    
+
+    ##generate a list of topic 
+    topic.list <- NULL
+    ##Topic from 1 to 15
+    for (i_topic in 1:15){
+        topic.num <- paste0(i_topic, ".0")
+        topic.list <- c(topic.list, topic.num)
+        
+        ##Sub-topic from 1 to 8
+        for (i_subtopic in 1:8){
+        
+            ##letters for sub-sub-topic from A to E
+            for (i_subletter in 1:5){
+                sub.num <- paste0(i_topic, ".",i_subtopic)
+                sub.num.letter <- paste0(sub.num, LETTERS[i_subletter])
+                topic.list <- c(topic.list, sub.num.letter)
+            }
+        }
+        ##Summary for each topic 1 to 3
+        summary.num <- paste0("Summary ",i_topic,"_", seq(1,3))
+        topic.list <- c(topic.list, summary.num)
+    }
+    
+    ##generate a list of class
+    ##class letters as A,B,C,D,S --TBC
+    class <- c(LETTERS[1:4],"S")
+    class.list <- NULL
+    for(i_form in 1:6){
+        for(i_class in 1:5){
+            class.list <- c(class.list,paste0("S.", i_form, class[i_class]))
+        }
+    }
+    
+    #read result excel
+    df.inputed <- table
+    score.result <- read_excel(path = paste0(class.selected, "_", topic.selected,".xlsx"),
+                               sheet = NULL, col_names = TRUE)
+
+
+}
